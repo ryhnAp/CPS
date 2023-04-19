@@ -10,7 +10,6 @@ SoftwareSerial virtualMonitor(2, 3); // RX | TX
 
 #define HUMIDITY 0
 #define TEMPERATURE 1
-float info[2];
 
 float lastHumidity = 0;
 
@@ -32,7 +31,7 @@ float calTemperature(unsigned int I2CInput1, unsigned int I2CInput2){
 }
 
 float* extractDataForMain() {
-  float result[2];
+  float* result = new float[2];;
   unsigned int I2CData[2];
   
   // Each of the following 3 lines will do
@@ -96,21 +95,22 @@ float* extractDataForMain() {
 void sendToMain(float* sensorData) {
   // input format from sensor to main:
   // "humidity-temperature$"
-  Serial.print(info[HUMIDITY]);
+  Serial.print(sensorData[HUMIDITY]);
   Serial.print("-");
-  Serial.print(info[TEMPERATURE]);
+  Serial.print(sensorData[TEMPERATURE]);
   Serial.print("$");
 }
 
 bool isChanged(float newHumidity){
-  return abs(lastHumidity-newHumidity) < 0.05*lastHumidity;
+  return abs(lastHumidity-newHumidity) > 0.05*lastHumidity;
 }
 
 void loop() {
   float* sensorData = extractDataForMain();
+
   if(isChanged(sensorData[HUMIDITY])){
     sendToMain(sensorData);
     lastHumidity = sensorData[HUMIDITY];
   }
-  delay(1000);
+  delay(500);
 }

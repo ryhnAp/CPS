@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 #include <LiquidCrystal.h>
-
+#include <Wire.h>
 #define HUMIDITY 0
 #define TEMPERATURE 1
 float info[2];// input format == humidity-temperature$
@@ -30,7 +30,7 @@ char getInput()
 float *sensorInputProccess(const String &data)
 {
   int splitIndex = 0;
-  for (int i = 0; i < data.length(); i++)
+  for (unsigned int i = 0; i < data.length(); i++)
     if (data[i] == '-')
       splitIndex = i;
 
@@ -55,20 +55,23 @@ void sendDataToActuator(float* sensorData)
     analogWrite(outputPin, 0);
 }
 
+String entry = "";
+
 void loop()
 {
-  String entry = "";
-  char c;
-  if (Serial.available())
-    if (c = Serial.read())
-      entry += c;
+  char c = '\n';
+  if (Serial.available()){
+    c = Serial.read();
+    entry += c;
+  }
   
-  if (c == '$')
-  {
+  if (c == '$'){
+    virtualMonitor.print(c);
     virtualMonitor.print("MAIN: Received from sensor: ");
     virtualMonitor.println(entry);
     float *sensorData = sensorInputProccess(entry);
     sendDataToActuator(sensorData);
     virtualMonitor.print("MAIN: SEND to actuator");
+    entry = "";
   }
 }
