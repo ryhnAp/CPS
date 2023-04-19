@@ -12,6 +12,8 @@ SoftwareSerial virtualMonitor(2, 3); // RX | TX
 #define TEMPERATURE 1
 float info[2];
 
+float lastHumidity = 0;
+
 void setup() {
   // Initialise I2C communication as MASTER
   Wire.begin();
@@ -100,8 +102,15 @@ void sendToMain(float* sensorData) {
   Serial.print("$");
 }
 
+bool isChanged(float newHumidity){
+  return abs(lastHumidity-newHumidity) < 0.05*lastHumidity;
+}
+
 void loop() {
   float* sensorData = extractDataForMain();
-  sendToMain(sensorData);
+  if(isChanged(sensorData[HUMIDITY])){
+    sendToMain(sensorData);
+    lastHumidity = sensorData[HUMIDITY];
+  }
   delay(1000);
 }

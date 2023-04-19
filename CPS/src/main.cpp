@@ -45,7 +45,7 @@ void sendDataToActuator(float* sensorData)
   if (info[HUMIDITY] < 10)
     analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(25/100));
   else if (info[HUMIDITY] >= 10 && info[HUMIDITY] < 20)
-    analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(20/100)); // 15 cc/min ???
+    analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(20/100));
   else if (info[HUMIDITY] >= 20 && info[HUMIDITY] < 30)
     if (info[TEMPERATURE] > 25)
       analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(10/100));
