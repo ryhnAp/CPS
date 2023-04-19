@@ -1,82 +1,81 @@
 #include <SoftwareSerial.h>
+#include <LiquidCrystal.h>
 
-struct SensorData {
-  int humidity;
-  int cTemp;
-};
+#define HUMIDITY 0
+#define TEMPERATURE 1
+int info[2];// input format == humidity-temperature$
 
+#define ANALOG_WRITE_INTERVAL 255
 SoftwareSerial virtualMonitor(2, 3); // RX | TX
 
-String msg = "";
-int pwmOutputPin = 6;
+int outputPin = 6;
 
-void setup() {
-  pinMode(pwmOutputPin, OUTPUT); 
+void setup()
+{
+  pinMode(outputPin, OUTPUT);
   Serial.begin(9600);
-  virtualMonitor.begin(9600);
+  virtualMonitor.begin(9600); // debug
 }
 
-char pollSerial() {
-  if (Serial.available()) {
+char getInput()
+{
+  if (Serial.available())
+  {
     char c = Serial.read(); // gets one byte from serial buffer
     return c;
   }
-
-  return ((char) 0);
+  return ((char)0);
 }
 
-struct SensorData msgToSensorData(const String& msg) {
-  int value = 0;
-  
-  int cIndex = 0;
-  
-  for (int i = 1; i < msg.length(); i++)
-    if (msg[i] == 'C')
-      cIndex = i;
+int *sensorInputProccess(const String &data)
+{
 
-  struct SensorData sensorData;
-  sensorData.humidity = msg.substring(1, cIndex).toInt();
-  sensorData.cTemp = msg.substring(cIndex + 1, msg.length() - 1).toInt();
-  
-  return sensorData;
+  int splitIndex = 0;
+  for (int i = 0; i < data.length(); i++)
+    if (data[i] == '-')
+      splitIndex = i;
+
+  info[HUMIDITY] = data.substring(0, splitIndex).toInt();
+  info[TEMPERATURE] = data.substring(splitIndex + 1, data.length()).toInt();
+
+  return info;
 }
 
-int convertPwmDutyCycle(int duty_cycle) {
+int convertPwmDutyCycle(int duty_cycle)
+{
   int maxPwmValue = 255;
   return (duty_cycle * maxPwmValue) / 100;
 }
 
-void generatePwmSignal(struct SensorData &sensorData) {
-  if (sensorData.humidity < 10) {
-    analogWrite(pwmOutputPin, convertPwmDutyCycle(25));
-  } 
-  else if(sensorData.humidity >= 10 && sensorData.humidity < 20){
-    analogWrite(pwmOutputPin, convertPwmDutyCycle(20));//15 cc/min ??? 
-  }
-  else if (sensorData.humidity >= 20 && sensorData.humidity < 30) {
-     if (sensorData.cTemp > 25) {
-        analogWrite(pwmOutputPin, convertPwmDutyCycle(10));
-     } 
-     else {
-        analogWrite(pwmOutputPin, 0);
-     }
-  } 
-  else {
-    analogWrite(pwmOutputPin, 0);
-  }
+void sendDataToActuator(int* sensorData)
+{
+  if (info[HUMIDITY] < 10)
+    analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(25/100));
+  else if (info[HUMIDITY] >= 10 && info[HUMIDITY] < 20)
+    analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(20/100)); // 15 cc/min ???
+  else if (info[HUMIDITY] >= 20 && info[HUMIDITY] < 30)
+    if (info[TEMPERATURE] > 25)
+      analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(10/100));
+    else
+      analogWrite(outputPin, 0); 
+  else
+    analogWrite(outputPin, 0);
 }
 
-void loop() {
-    char c = pollSerial();
-    
-    if (c)
-      msg += c;
-    
-    if (c == '!') {
-      virtualMonitor.print("MASTER: Received: ");
-      virtualMonitor.println(msg);
-      struct SensorData sensorData = msgToSensorData(msg);
-      generatePwmSignal(sensorData);
-      msg = "";
-    }
+void loop()
+{
+  String entry = "";
+  char c;
+  if (Serial.available())
+    if (c = Serial.read())
+      entry += c;
+  
+  if (c == '$')
+  {
+    virtualMonitor.print("MAIN: Received from sensor: ");
+    virtualMonitor.println(entry);
+    int *sensorData = sensorInputProccess(entry);
+    sendDataToActuator(sensorData);
+    virtualMonitor.print("MAIN: SEND to actuator: ");
+  }
 }
