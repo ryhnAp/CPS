@@ -3,7 +3,7 @@
 
 #define HUMIDITY 0
 #define TEMPERATURE 1
-int info[2];// input format == humidity-temperature$
+float info[2];// input format == humidity-temperature$
 
 #define ANALOG_WRITE_INTERVAL 255
 SoftwareSerial virtualMonitor(2, 3); // RX | TX
@@ -27,27 +27,20 @@ char getInput()
   return ((char)0);
 }
 
-int *sensorInputProccess(const String &data)
+float *sensorInputProccess(const String &data)
 {
-
   int splitIndex = 0;
   for (int i = 0; i < data.length(); i++)
     if (data[i] == '-')
       splitIndex = i;
 
-  info[HUMIDITY] = data.substring(0, splitIndex).toInt();
-  info[TEMPERATURE] = data.substring(splitIndex + 1, data.length()).toInt();
+  info[HUMIDITY] = data.substring(0, splitIndex).toFloat();
+  info[TEMPERATURE] = data.substring(splitIndex + 1, data.length()).toFloat();
 
   return info;
 }
 
-int convertPwmDutyCycle(int duty_cycle)
-{
-  int maxPwmValue = 255;
-  return (duty_cycle * maxPwmValue) / 100;
-}
-
-void sendDataToActuator(int* sensorData)
+void sendDataToActuator(float* sensorData)
 {
   if (info[HUMIDITY] < 10)
     analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(25/100));
@@ -74,8 +67,8 @@ void loop()
   {
     virtualMonitor.print("MAIN: Received from sensor: ");
     virtualMonitor.println(entry);
-    int *sensorData = sensorInputProccess(entry);
+    float *sensorData = sensorInputProccess(entry);
     sendDataToActuator(sensorData);
-    virtualMonitor.print("MAIN: SEND to actuator: ");
+    virtualMonitor.print("MAIN: SEND to actuator");
   }
 }
