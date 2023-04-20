@@ -38,26 +38,31 @@ int mainInputProccess(const String &data)
   virtualMonitor.print(dutyCycle);
   return dutyCycle;
 }
+
+char c = '\n';
 int dutyCycle = 100;
+bool isPrint = false;
+
 void loop() {
-  char c = '\n';
   if (Serial.available()){
     c = Serial.read();
     entry += c;
-    virtualMonitor.println(c);
+    isPrint = true;
   }
-
   if (c == '$'){
-    virtualMonitor.print("ACTUATOR: Received from MAIN: ");
-    virtualMonitor.println(entry);
-    dutyCycle = mainInputProccess(entry);
+    if(isPrint){
+      virtualMonitor.print("ACTUATOR: Received from MAIN: ");
+      virtualMonitor.println(entry);
+      dutyCycle = mainInputProccess(entry);
+      isPrint = false;
+    }
     entry = "";
+    digitalWrite(M1,HIGH);
+    digitalWrite(M2,LOW);
+    delay(10*dutyCycle);
+    digitalWrite(M1,LOW);
+    digitalWrite(M2,HIGH);
+    delay(1000 - 10*dutyCycle);
   }
 
-  // digitalWrite(M1,HIGH);
-  // digitalWrite(M2,LOW);
-  // delay(10*dutyCycle);
-  // digitalWrite(M1,LOW);
-  // digitalWrite(M2,HIGH);
-  // delay(1000 - 10*dutyCycle);
 }

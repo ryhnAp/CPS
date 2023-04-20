@@ -15,8 +15,10 @@ AltSoftSerial BTSerial(RXPIN, TXPIN);
 
 
 #define ANALOG_WRITE_INTERVAL 255
-SoftwareSerial virtualMonitor(2, 3); // RX | TX
+SoftwareSerial virtualMonitor(7, 6); // RX | TX
 int outputPin = 6;
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 void setup()
 {
@@ -26,6 +28,9 @@ void setup()
   BTSerial.begin(9600);
   pinMode(RXPIN, INPUT);
   pinMode(TXPIN, OUTPUT);
+
+  lcd.begin(16, 2);
+  lcd.print("MAIN");
 }
 
 float *sensorInputProccess(const String &data)
@@ -36,12 +41,15 @@ float *sensorInputProccess(const String &data)
       splitIndex = i;
 
   info[HUMIDITY] = data.substring(0, splitIndex).toFloat();
+  lcd.setCursor(0, 1);
+  lcd.println(info[HUMIDITY]);
   info[TEMPERATURE] = data.substring(splitIndex + 1, data.length()).toFloat();
-
+  lcd.println(info[TEMPERATURE]);
   return info;
 }
 
 void sendDataToActuator(int dutyCycle){
+  lcd.println(dutyCycle);
   BTSerial.print(info[HUMIDITY]);
   BTSerial.print("-");
   delay(100);
@@ -77,11 +85,9 @@ void loop()
   if (Serial.available()){
     c = Serial.read();
     entry += c;
-    virtualMonitor.print(c);
   }
   if (c == '$'){
-    virtualMonitor.print("MAIN: Received from sensor: ");
-    virtualMonitor.println(entry);
+    virtualMonitor.println("MAIN: Received from sensor: ");
     float *sensorData = sensorInputProccess(entry);
     sendDataToActuator(sensorData);
     entry = "";
