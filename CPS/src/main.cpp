@@ -2,13 +2,20 @@
 #include <LiquidCrystal.h>
 #include <AltSoftSerial.h>
 #include <Wire.h>
+
+
 #define HUMIDITY 0
 #define TEMPERATURE 1
 float info[2];// input format == humidity-temperature$
 
+
+#define RXPIN 8
+#define TXPIN 9
+AltSoftSerial BTSerial(RXPIN, TXPIN);
+
+
 #define ANALOG_WRITE_INTERVAL 255
 SoftwareSerial virtualMonitor(2, 3); // RX | TX
-// SoftwareSerial BTSerial(4, 5);// RX | TX
 int outputPin = 6;
 
 void setup()
@@ -16,7 +23,9 @@ void setup()
   pinMode(outputPin, OUTPUT);
   Serial.begin(9600);
   virtualMonitor.begin(9600); // debug
-  // BTSerial.begin(4800);
+  BTSerial.begin(9600);
+  pinMode(RXPIN, INPUT);
+  pinMode(TXPIN, OUTPUT);
 }
 
 float *sensorInputProccess(const String &data)
@@ -33,12 +42,13 @@ float *sensorInputProccess(const String &data)
 }
 
 void sendDataToActuator(int dutyCycle){
-  Serial.print(info[TEMPERATURE]);
-  Serial.print("-");
-  Serial.print(info[HUMIDITY]);
-  Serial.print("-");
-  Serial.print(dutyCycle);
-  Serial.print("$");
+  BTSerial.print(info[HUMIDITY]);
+  BTSerial.print("-");
+  BTSerial.print(info[TEMPERATURE]);
+  BTSerial.print("-");
+  BTSerial.print(dutyCycle);
+  BTSerial.print("$");
+  virtualMonitor.println("MAIN: sent to actuator!");
 }
 
 void sendDataToActuator(float* sensorData)
@@ -64,15 +74,13 @@ void loop()
   if (Serial.available()){
     c = Serial.read();
     entry += c;
-  }
-  
-  if (c == '$'){
     virtualMonitor.print(c);
+  }
+  if (c == '$'){
     virtualMonitor.print("MAIN: Received from sensor: ");
     virtualMonitor.println(entry);
     float *sensorData = sensorInputProccess(entry);
     sendDataToActuator(sensorData);
-    virtualMonitor.print("MAIN: SEND to actuator");
     entry = "";
   }
 }
