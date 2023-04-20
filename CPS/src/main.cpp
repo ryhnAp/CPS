@@ -1,5 +1,6 @@
 #include <SoftwareSerial.h>
 #include <LiquidCrystal.h>
+#include <AltSoftSerial.h>
 #include <Wire.h>
 #define HUMIDITY 0
 #define TEMPERATURE 1
@@ -7,7 +8,7 @@ float info[2];// input format == humidity-temperature$
 
 #define ANALOG_WRITE_INTERVAL 255
 SoftwareSerial virtualMonitor(2, 3); // RX | TX
-
+// SoftwareSerial BTSerial(4, 5);// RX | TX
 int outputPin = 6;
 
 void setup()
@@ -15,16 +16,7 @@ void setup()
   pinMode(outputPin, OUTPUT);
   Serial.begin(9600);
   virtualMonitor.begin(9600); // debug
-}
-
-char getInput()
-{
-  if (Serial.available())
-  {
-    char c = Serial.read(); // gets one byte from serial buffer
-    return c;
-  }
-  return ((char)0);
+  // BTSerial.begin(4800);
 }
 
 float *sensorInputProccess(const String &data)
@@ -40,19 +32,28 @@ float *sensorInputProccess(const String &data)
   return info;
 }
 
+void sendDataToActuator(int dutyCycle){
+  Serial.print(info[TEMPERATURE]);
+  Serial.print("-");
+  Serial.print(info[HUMIDITY]);
+  Serial.print("-");
+  Serial.print(dutyCycle);
+  Serial.print("$");
+}
+
 void sendDataToActuator(float* sensorData)
 {
   if (info[HUMIDITY] < 10)
-    analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(25/100));
+    sendDataToActuator(25);
   else if (info[HUMIDITY] >= 10 && info[HUMIDITY] < 20)
-    analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(20/100));
+    sendDataToActuator(20);
   else if (info[HUMIDITY] >= 20 && info[HUMIDITY] < 30)
     if (info[TEMPERATURE] > 25)
-      analogWrite(outputPin, ANALOG_WRITE_INTERVAL*(10/100));
+      sendDataToActuator(10);
     else
-      analogWrite(outputPin, 0); 
+      sendDataToActuator(0);
   else
-    analogWrite(outputPin, 0);
+      sendDataToActuator(0);
 }
 
 String entry = "";
