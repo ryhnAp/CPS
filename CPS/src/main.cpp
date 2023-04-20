@@ -44,10 +44,13 @@ float *sensorInputProccess(const String &data)
 void sendDataToActuator(int dutyCycle){
   BTSerial.print(info[HUMIDITY]);
   BTSerial.print("-");
+  delay(100);
   BTSerial.print(info[TEMPERATURE]);
   BTSerial.print("-");
+  delay(100);
   BTSerial.print(dutyCycle);
   BTSerial.print("$");
+  delay(100);
   virtualMonitor.println("MAIN: sent to actuator!");
 }
 
