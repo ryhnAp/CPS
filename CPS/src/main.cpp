@@ -6,7 +6,7 @@
 
 #define HUMIDITY 0
 #define TEMPERATURE 1
-float info[2];// input format == humidity-temperature$
+float info[2];// input format == humidity-temperature-dutycycle$
 
 
 #define RXPIN 8
@@ -24,10 +24,11 @@ void setup()
 {
   pinMode(outputPin, OUTPUT);
   Serial.begin(9600);
-  virtualMonitor.begin(9600); // debug
+  virtualMonitor.begin(9600);
   BTSerial.begin(9600);
   pinMode(RXPIN, INPUT);
   pinMode(TXPIN, OUTPUT);
+  
 
   lcd.begin(16, 2);
   lcd.print("MAIN");
